@@ -60,7 +60,6 @@ Program dapat dibuka, dikompilasi, dan diunggah memakai **Arduino IDE** maupun *
 
 **Perangkat lunak**
 
-- Sistem operasi **Ubuntu Linux** (contoh pada dokumen ini)
 - **Pilih salah satu** lingkungan pengembangan:
   - **PlatformIO** (dipakai penulis): [Visual Studio Code](https://code.visualstudio.com/) dengan ekstensi **PlatformIO IDE** (sudah termasuk PlatformIO Core, platform `espressif32` akan terunduh otomatis saat build pertama), atau
   - **Arduino IDE** 2.x
