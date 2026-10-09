@@ -542,10 +542,6 @@ Praktikum_3 : Wireless Sensor Network Short Range (ESP-NOW)
 └── readme.md                # Dokumen ini
 ```
 
-> Struktur di atas untuk **PlatformIO** (satu folder = satu project, berisi `platformio.ini` dan `src/`). Jika memakai **Arduino IDE**, salin kodenya ke folder yang namanya sama dengan file `.ino`.
-
----
-
 ## Referensi
 
 - [Dokumentasi resmi ESP-NOW (Espressif)](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_now.html)
