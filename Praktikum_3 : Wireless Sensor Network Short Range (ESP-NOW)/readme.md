@@ -14,18 +14,6 @@ Program dapat dibuka, dikompilasi, dan diunggah memakai **Arduino IDE** maupun *
 
 ---
 
-## Tujuan Pembelajaran
-
-Setelah menyelesaikan praktikum ini, kamu diharapkan mampu:
-
-1. Menjelaskan apa itu ESP-NOW dan kapan protokol ini cocok dipakai pada Wireless Sensor Network.
-2. Mengecek dan memakai **MAC address** ESP32 sebagai alamat tujuan komunikasi.
-3. Membuat komunikasi **dua arah**, **satu ke banyak**, dan **banyak ke satu** antar ESP32.
-4. Memahami cara kerja **jaringan mesh** sederhana (multi-hop).
-5. Menggabungkan ESP-NOW dengan **web server** untuk memantau perangkat lewat browser.
-
----
-
 ## Apa itu ESP-NOW?
 
 **ESP-NOW** adalah protokol komunikasi nirkabel buatan **Espressif** yang memungkinkan beberapa ESP32 saling berkirim data **secara langsung (peer-to-peer)** melalui radio 2,4 GHz. Tidak ada proses *connect* ke access point, tidak ada DHCP, dan tidak ada handshake yang panjang. Perangkat cukup mengetahui **MAC address** lawan bicaranya, lalu langsung mengirim data.
