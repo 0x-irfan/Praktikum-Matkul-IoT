@@ -453,8 +453,6 @@ flowchart LR
 
 **Konsep yang dipelajari:** mode Wi-Fi ganda, web server di mikrokontroler, hubungan channel Wi-Fi dengan ESP-NOW, serta IP statis dan mDNS.
 
-> **Keamanan:** jangan menaruh **SSID dan password Wi-Fi asli** di repositori publik. Gunakan nilai contoh sebelum melakukan *commit*, atau simpan kredensial di file terpisah yang tidak ikut diunggah (misalnya lewat `.gitignore`).
-
 ---
 
 ## Pengaturan Serial Monitor
