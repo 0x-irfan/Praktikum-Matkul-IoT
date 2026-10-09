@@ -3,10 +3,14 @@
 ![ESP32](https://img.shields.io/badge/Board-ESP32-blue)
 ![Protocol](https://img.shields.io/badge/Protocol-ESP--NOW-orange)
 ![Framework](https://img.shields.io/badge/Framework-Arduino-00979D)
+![IDE](https://img.shields.io/badge/IDE-PlatformIO%20%7C%20Arduino%20IDE-f5822a)
+![OS](https://img.shields.io/badge/OS-Ubuntu%20Linux-E95420)
 
 Repositori ini berisi kumpulan program praktikum **komunikasi nirkabel jarak dekat antar ESP32 menggunakan ESP-NOW**. Praktikum dimulai dari langkah paling dasar (mengecek MAC address), lalu berlanjut ke berbagai pola komunikasi: **Two Ways (PtP)**, **One to Many**, **Many to One**, **Mesh**, dan **ESP-NOW + Web Server**.
 
 Semua komunikasi dilakukan **tanpa router dan tanpa internet** (kecuali pada bagian web server, yang memakai Wi-Fi hanya untuk menampilkan halaman web). Pesan diketik melalui **Serial Monitor**, dikirim lewat udara, lalu ditampilkan di Serial Monitor perangkat lain.
+
+Program dapat dibuka, dikompilasi, dan diunggah memakai **Arduino IDE** maupun **PlatformIO** (VS Code atau command line).
 
 ---
 
@@ -68,11 +72,176 @@ Setelah menyelesaikan praktikum ini, kamu diharapkan mampu:
 
 **Perangkat lunak**
 
-- [Arduino IDE](https://www.arduino.cc/en/software) 2.x
-- Board package **esp32 by Espressif Systems** (v2.x atau v3.x)
-- Driver USB-serial (CP210x atau CH340, sesuai board)
+- Sistem operasi **Ubuntu Linux** (contoh pada dokumen ini)
+- **Pilih salah satu** lingkungan pengembangan:
+  - **PlatformIO** (dipakai penulis): [Visual Studio Code](https://code.visualstudio.com/) dengan ekstensi **PlatformIO IDE** (sudah termasuk PlatformIO Core, platform `espressif32` akan terunduh otomatis saat build pertama), atau
+  - **Arduino IDE** 2.x
+- Driver USB-serial (CP210x atau CH340, sesuai board). Di Ubuntu, driver ini umumnya sudah ada di kernel sehingga tidak perlu instalasi tambahan.
 
-> Tidak ada library tambahan yang perlu diinstal. `WiFi.h`, `esp_now.h`, dan `WebServer.h` sudah termasuk dalam core ESP32.
+> Tidak ada library tambahan yang perlu diinstal (`lib_deps` tidak diperlukan). `WiFi.h`, `esp_now.h`, `WebServer.h`, dan `ESPmDNS.h` sudah termasuk dalam framework Arduino-ESP32.
+
+### PlatformIO atau Arduino IDE?
+
+Keduanya menghasilkan program yang sama untuk ESP32, sehingga kode di repositori ini bisa dipakai di salah satunya. Perbedaannya ada pada cara kerja dan struktur proyek:
+
+| Aspek | PlatformIO | Arduino IDE |
+|---|---|---|
+| Format file | `src/main.cpp` (atau `main.ino`) dan `platformio.ini` | `.ino` dalam folder bernama sama |
+| Pengaturan board dan port | Ditulis di `platformio.ini` | Menu **Tools** |
+| Board package dan library | Diunduh otomatis sesuai `platformio.ini` | Diinstal lewat Boards Manager |
+| Serial Monitor | `pio device monitor` atau ikon steker di VS Code | Bawaan IDE |
+| Beberapa board sekaligus | Satu `[env]` per board di `platformio.ini` | Pilih board dan port satu per satu |
+| Cocok untuk | Proyek bertahap, version control, kerja lewat terminal | Memulai dengan cepat |
+
+---
+
+## Persiapan di Ubuntu
+
+Bagian ini berlaku untuk **PlatformIO maupun Arduino IDE**. Di Linux, akses ke port serial dibatasi, sehingga ada beberapa pengaturan yang cukup dilakukan sekali saja.
+
+### 1. Izin akses port serial
+
+Tambahkan akun kamu ke grup `dialout`, lalu **logout dan login kembali** (atau reboot):
+
+```bash
+sudo usermod -aG dialout $USER
+```
+
+Setelah login ulang, jalankan `groups` dan pastikan kata `dialout` ada di daftarnya. Tanpa langkah ini, upload gagal dengan pesan `Permission denied: '/dev/ttyUSB0'`.
+
+### 2. Cek port board
+
+Colok ESP32 dengan kabel USB **data**, lalu lihat port yang muncul:
+
+```bash
+ls /dev/ttyUSB* /dev/ttyACM*
+dmesg
+```
+
+Board dengan chip CP210x atau CH340 biasanya muncul sebagai `/dev/ttyUSB0`, sebagian board lain sebagai `/dev/ttyACM0`. Jika memakai tiga board sekaligus, port-nya menjadi `/dev/ttyUSB0`, `/dev/ttyUSB1`, dan `/dev/ttyUSB2`.
+
+### 3. Jika port menghilang: hapus `brltty`
+
+Pada beberapa versi Ubuntu, layanan `brltty` (untuk perangkat braille) ikut mengambil alih port CH340 atau CP210x sehingga port ESP32 muncul lalu hilang beberapa saat setelah dicolok. Jika itu terjadi:
+
+```bash
+sudo apt remove --purge brltty
+```
+
+Lalu cabut dan colok kembali board-nya.
+
+### 4. Memasang PlatformIO
+
+**Cara 1: VS Code dengan ekstensi PlatformIO IDE.** Pasang Visual Studio Code (paket `.deb` dari situs resminya atau lewat snap), buka menu **Extensions**, cari **PlatformIO IDE**, klik **Install**, lalu restart VS Code.
+
+**Cara 2: PlatformIO Core di terminal.** Pada Ubuntu versi baru, `pip install` ke sistem diblokir, sehingga disarankan memakai `pipx`:
+
+```bash
+sudo apt update
+sudo apt install -y pipx
+pipx ensurepath
+pipx install platformio
+pio --version
+```
+
+Buka terminal baru setelah `pipx ensurepath` agar perintah `pio` dikenali.
+
+PlatformIO juga menyediakan aturan udev agar berbagai board dikenali tanpa `sudo`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/system/99-platformio-udev.rules | sudo tee /etc/udev/rules.d/99-platformio-udev.rules
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+
+---
+
+## Menyiapkan Project PlatformIO
+
+Di PlatformIO, **satu folder = satu project**. Setiap program (misalnya Two Ways, One to Many, dst.) sebaiknya berada di project-nya sendiri dengan file `platformio.ini` masing-masing.
+
+### 1. Buat project
+
+1. Di VS Code, buka **PlatformIO Home** &rarr; **New Project**.
+2. Isi nama project, pilih board **Espressif ESP32 Dev Module** (`esp32dev`), dan framework **Arduino**.
+3. Letakkan kode program di `src/main.cpp` atau `src/main.ino`.
+
+> File `.ino` tetap bisa dipakai di PlatformIO, karena PlatformIO menambahkan `#include <Arduino.h>` dan prototipe fungsi secara otomatis. Jika kamu mengganti nama menjadi `main.cpp`, tambahkan `#include <Arduino.h>` di baris pertama dan pastikan setiap fungsi sudah didefinisikan sebelum dipakai.
+
+### 2. Isi `platformio.ini`
+
+Contoh untuk tiga board yang tercolok bersamaan (satu environment per board):
+
+```ini
+[env]
+platform = espressif32
+board = esp32dev
+framework = arduino
+monitor_speed = 115200
+monitor_filters = default, send_on_enter
+monitor_echo = yes
+
+[env:master]
+upload_port = /dev/ttyUSB0
+monitor_port = /dev/ttyUSB0
+
+[env:slave1]
+upload_port = /dev/ttyUSB1
+monitor_port = /dev/ttyUSB1
+
+[env:slave2]
+upload_port = /dev/ttyUSB2
+monitor_port = /dev/ttyUSB2
+```
+
+| Baris | Fungsi |
+|---|---|
+| `platform = espressif32` | Platform untuk chip ESP32. |
+| `board = esp32dev` | Jenis board (ESP32 Dev Module). Ganti sesuai board kamu. |
+| `framework = arduino` | Memakai framework Arduino-ESP32, sehingga `Serial`, `WiFi.h`, dan `esp_now.h` bisa dipakai. |
+| `monitor_speed = 115200` | Baud rate Serial Monitor. Harus sama dengan `Serial.begin(115200)` di kode. |
+| `monitor_filters = default, send_on_enter` | Teks baru dikirim ke board **saat Enter ditekan**. Wajib untuk program ini (lihat bagian *Pengaturan Serial Monitor*). |
+| `monitor_echo = yes` | Menampilkan kembali huruf yang kamu ketik agar terlihat di layar. |
+| `upload_port` / `monitor_port` | Port tiap board. Nama port berbeda di setiap komputer (misalnya `/dev/ttyUSB0` di Ubuntu, `COM5` di Windows). Cek dengan `pio device list`. |
+
+> **Tips (Ubuntu):** nomor `ttyUSB0`, `ttyUSB1`, dan seterusnya mengikuti **urutan board dicolok**, sehingga bisa tertukar saat dicabut dan dicolok ulang. Cara aman: colok board satu per satu sambil mencatat port-nya dengan `pio device list`, lalu sesuaikan `platformio.ini`. Jika boardmu punya nomor seri unik, nama tetap juga tersedia di `/dev/serial/by-id/`.
+
+### 3. Build, upload, dan monitor
+
+Lewat ikon di status bar VS Code bagian bawah (**✓ Build**, **→ Upload**, **🔌 Serial Monitor**), atau lewat terminal:
+
+| Tujuan | Perintah |
+|---|---|
+| Daftar port yang terdeteksi | `pio device list` |
+| Build | `pio run` |
+| Upload ke board tertentu | `pio run -e master -t upload` |
+| Serial Monitor board tertentu | `pio device monitor -e master` |
+| Upload ke port tertentu | `pio run -t upload --upload-port /dev/ttyUSB0` |
+| Serial Monitor di port tertentu | `pio device monitor -p /dev/ttyUSB0` |
+
+> Karena praktikum memakai beberapa board sekaligus, buka **satu terminal Serial Monitor per board** (misalnya `pio device monitor -e master` di satu terminal dan `pio device monitor -e slave1` di terminal lain).
+
+---
+
+## Alternatif: Menjalankan dengan Arduino IDE
+
+Program yang sama dapat dijalankan memakai **Arduino IDE 2.x** di Ubuntu.
+
+1. Unduh **Arduino IDE 2.x** untuk Linux dari [arduino.cc](https://www.arduino.cc/en/software). Untuk berkas AppImage, beri izin eksekusi lalu jalankan:
+   ```bash
+   chmod +x arduino-ide_*_Linux_64bit.AppImage
+   ./arduino-ide_*_Linux_64bit.AppImage
+   ```
+   Pada beberapa versi Ubuntu, AppImage kadang gagal terbuka karena pembatasan keamanan. Jika itu terjadi, jalankan dengan tambahan opsi `--no-sandbox`.
+2. Buka **File → Preferences**, lalu isi **Additional boards manager URLs** dengan:
+   ```text
+   https://espressif.github.io/arduino-esp32/package_esp32_index.json
+   ```
+3. Buka **Tools → Board → Boards Manager**, cari **esp32 by Espressif Systems**, lalu **Install**.
+4. Pilih **Tools → Board → ESP32 Dev Module** (atau sesuai board) dan **Tools → Port → /dev/ttyUSB0**.
+5. Buka file `.ino`, klik **Upload**, lalu buka **Serial Monitor** (pengaturannya ada di bagian [Pengaturan Serial Monitor](#pengaturan-serial-monitor)).
+
+> Di Arduino IDE, **nama folder harus sama dengan nama file `.ino`**. Jika kode kamu berada di `src/main.ino` pada project PlatformIO, salin ke folder baru yang namanya sama dengan nama file-nya (misalnya `espnow_two_way/espnow_two_way.ino`). Pengaturan board dan port dilakukan lewat menu **Tools**, bukan `platformio.ini`.
 
 ---
 
@@ -86,10 +255,11 @@ ESP-NOW tidak memakai IP address. Satu-satunya cara menunjuk "kirim ke siapa" ad
 
 ### Langkah-langkah
 
-1. Buka file [`Cek_MacAddr_ESP32.ino`](Cek_MacAddr_ESP32.ino) di Arduino IDE.
-2. Pilih board (misalnya **ESP32 Dev Module**) dan port yang sesuai.
-3. Klik **Upload**.
-4. Buka **Serial Monitor** dengan baud rate **115200**.
+1. **PlatformIO:** buat project PlatformIO baru (lihat [Menyiapkan Project PlatformIO](#menyiapkan-project-platformio)), lalu salin isi [`Cek_MacAddr_ESP32.ino`](Cek_MacAddr_ESP32.ino) ke `src/main.ino` (atau `src/main.cpp`).  
+   **Arduino IDE:** cukup buka file `Cek_MacAddr_ESP32.ino` (lihat [Alternatif: Arduino IDE](#alternatif-menjalankan-dengan-arduino-ide)).
+2. Colokkan board dan pastikan port terdeteksi: `pio device list` (PlatformIO) atau menu **Tools → Port** (Arduino IDE). Di Ubuntu, port biasanya `/dev/ttyUSB0`.
+3. **Upload**: klik ikon **→** atau jalankan `pio run -t upload` (PlatformIO), atau klik tombol **Upload** (Arduino IDE).
+4. Buka **Serial Monitor**: ikon steker **🔌** atau `pio device monitor` (PlatformIO, pastikan `monitor_speed = 115200`), atau ikon Serial Monitor dengan baud **115200** (Arduino IDE).
 5. Catat **MAC Wi-Fi STA**, karena itulah alamat yang dipakai ESP-NOW.
 6. Ulangi untuk setiap board, lalu beri label fisik (misalnya tempel stiker "Master", "Slave 1", "Slave 2") agar tidak tertukar.
 
@@ -166,6 +336,8 @@ void loop() {
 | 6 | `esp_now_send()` | Mengirim data. |
 
 > **Perbedaan versi core:** pada core ESP32 v3.x tanda tangan (*signature*) fungsi callback berbeda dibanding v2.x. Kode di repositori ini menanganinya dengan `#if ESP_ARDUINO_VERSION_MAJOR >= 3`, sehingga bisa dikompilasi di kedua versi.
+>
+> Di PlatformIO, versi core ditentukan oleh `platform` di `platformio.ini`. Umumnya `platform = espressif32` resmi memakai Arduino core v2.x, sedangkan core v3.x tersedia lewat fork komunitas seperti *pioarduino*. Cek versi yang terpakai pada log build (`framework-arduinoespressif32`). Kedua versi didukung oleh kode di sini.
 
 ---
 
@@ -300,14 +472,38 @@ flowchart LR
 
 ## Pengaturan Serial Monitor
 
-Semua program memakai pengaturan yang sama:
+### PlatformIO
 
-| Pengaturan | Nilai |
-|---|---|
-| Baud rate | **115200** |
-| Line ending | **Newline** (atau *Both NL & CR*) |
+Semua program memakai pengaturan yang sama di `platformio.ini`:
 
-Line ending harus *Newline* karena program membaca teks sampai tombol **Enter** ditekan.
+```ini
+monitor_speed = 115200
+monitor_filters = default, send_on_enter
+monitor_echo = yes
+```
+
+| Pengaturan | Nilai | Alasan |
+|---|---|---|
+| `monitor_speed` | **115200** | Harus sama dengan `Serial.begin(115200)` di kode. |
+| `monitor_filters` | `default, send_on_enter` | Program membaca teks sampai karakter **Enter** (`readStringUntil('\n')`). Tanpa `send_on_enter`, monitor PlatformIO mengirim **tiap ketikan satu per satu**, sehingga pesan tidak terbaca utuh oleh board. |
+| `monitor_echo` | `yes` | Menampilkan huruf yang kamu ketik. Tanpa ini, ketikan tidak terlihat di layar. |
+
+Karakter akhir baris (`\r\n`) yang dikirim monitor tidak masalah, karena kode memanggil `trim()` untuk membuangnya.
+
+### Arduino IDE
+
+Di jendela Serial Monitor Arduino IDE, atur dua hal berikut:
+
+| Pengaturan | Nilai | Alasan |
+|---|---|---|
+| Baud rate (pojok kanan bawah) | **115200** | Harus sama dengan `Serial.begin(115200)` di kode. |
+| Line ending | **Newline** (atau *Both NL & CR*) | Program membaca teks sampai karakter Enter (`readStringUntil('\n')`). |
+
+Teks baru dikirim saat kamu menekan **Enter** atau tombol kirim, sehingga tidak perlu pengaturan tambahan seperti `send_on_enter`.
+
+### Beberapa board sekaligus
+
+Buka satu Serial Monitor per board (di PlatformIO: satu terminal per board, di Arduino IDE: satu jendela IDE per board) dan **tutup monitor di port yang sama sebelum upload**. Port yang sedang dipakai monitor tidak bisa dipakai untuk upload.
 
 ---
 
@@ -329,8 +525,13 @@ Line ending harus *Newline* karena program membaca teks sampai tombol **Enter** 
 | MAC tercetak `00:00:00:00:00:00` | `WiFi.macAddress()` dipanggil sebelum stack Wi-Fi siap | Gunakan `esp_read_mac(mac, ESP_MAC_WIFI_STA)`. |
 | Selalu `GAGAL terkirim` | MAC tujuan salah, board tujuan belum menyala atau belum menjalankan ESP-NOW, atau terlalu jauh | Cek MAC lagi, nyalakan kedua board, dekatkan jaraknya. |
 | Pesan tidak muncul di board lawan | Peer belum didaftarkan, atau MAC tujuan tertukar | Periksa array MAC dan pastikan `esp_now_add_peer()` berhasil. |
-| Teks tidak terkirim saat Enter ditekan | Line ending bukan *Newline* | Ganti ke **Newline**. |
-| Karakter aneh di Serial Monitor | Baud rate tidak cocok | Atur ke **115200**. |
+| Teks tidak terkirim saat Enter ditekan, atau pesan terbaca terpotong | `send_on_enter` belum aktif di monitor PlatformIO | Tambahkan `monitor_filters = default, send_on_enter` di `platformio.ini`. |
+| Huruf yang diketik tidak terlihat | `monitor_echo` belum aktif | Tambahkan `monitor_echo = yes`. |
+| Karakter aneh di Serial Monitor | Baud rate tidak cocok | Atur `monitor_speed = 115200`. |
+| Upload gagal: port sibuk atau *could not open port* | Serial Monitor masih terbuka di port itu, atau port salah | Tutup monitor lalu upload ulang. Cek port dengan `pio device list`. |
+| Upload gagal: *Failed to connect to ESP32* atau berhenti di `Connecting.....` | Board tidak masuk mode flash, kabel USB hanya untuk charger, atau driver belum terpasang | Tahan tombol **BOOT** saat muncul `Connecting`, ganti kabel data, pasang driver CP210x atau CH340. |
+| Port tidak muncul di `pio device list` atau `/dev/ttyUSB*` | Kabel hanya untuk charger, atau `brltty` mengambil alih port | Pakai kabel data dan coba port USB lain. Cek log dengan `dmesg`. Jika port muncul lalu hilang, jalankan `sudo apt remove --purge brltty` lalu colok ulang. |
+| `Permission denied: '/dev/ttyUSB0'` saat upload atau monitor | Akun belum masuk grup `dialout` | Jalankan `sudo usermod -aG dialout $USER`, lalu logout dan login ulang. |
 | Error kompilasi pada fungsi callback | Versi core ESP32 berbeda (v2.x dan v3.x) | Perbarui board package. Kode sudah memakai `#if` untuk kedua versi. |
 | Pesan tidak terdengar saat web server aktif | Channel Wi-Fi tiap node berbeda | Pastikan semua node tersambung ke router yang sama, atau paksa channel yang sama pada mode AP. |
 | Pesan terpotong | Panjang teks melebihi ukuran `text[]` | Perpendek pesan (total struct maksimal 250 byte). |
@@ -341,15 +542,20 @@ Line ending harus *Newline* karena program membaca teks sampai tombol **Enter** 
 
 ```text
 Praktikum_3 : Wireless Sensor Network Short Range (ESP-NOW)
-├── Cek_MacAddr_ESP32.ino    # Program untuk mengecek MAC address
+├── Cek_MacAddr_ESP32.ino    # Program cek MAC address (salin ke src/ project PlatformIO)
 ├── Two Ways or PtP/         # Komunikasi dua arah
-├── OneToMany/               # Satu pengirim ke banyak penerima
-├── ManyToOne/               # Banyak pengirim ke satu penerima
-├── Mesh/                    # Jaringan mesh (multi-hop, flooding)
-├── ESPNOW-WebServer/        # ESP-NOW + web server
+│   ├── platformio.ini       # Konfigurasi project PlatformIO
+│   └── src/
+│       └── main.cpp         # Kode program (boleh juga main.ino)
+├── OneToMany/               # Satu pengirim ke banyak penerima (struktur sama)
+├── ManyToOne/               # Banyak pengirim ke satu penerima (struktur sama)
+├── Mesh/                    # Jaringan mesh: multi-hop, flooding (struktur sama)
+├── ESPNOW-WebServer/        # ESP-NOW + web server (struktur sama)
 ├── images/                  # Screenshot untuk README
 └── readme.md                # Dokumen ini
 ```
+
+> Struktur di atas untuk **PlatformIO** (satu folder = satu project, berisi `platformio.ini` dan `src/`). Jika memakai **Arduino IDE**, salin kodenya ke folder yang namanya sama dengan file `.ino`.
 
 ---
 
@@ -357,3 +563,5 @@ Praktikum_3 : Wireless Sensor Network Short Range (ESP-NOW)
 
 - [Dokumentasi resmi ESP-NOW (Espressif)](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_now.html)
 - [Arduino-ESP32 (GitHub)](https://github.com/espressif/arduino-esp32)
+- [PlatformIO: platform Espressif 32](https://docs.platformio.org/en/latest/platforms/espressif32.html)
+- [Arduino IDE 2.x](https://www.arduino.cc/en/software)
