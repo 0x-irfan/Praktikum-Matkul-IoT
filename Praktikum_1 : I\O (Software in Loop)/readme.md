@@ -29,10 +29,7 @@ Ada 4 program: LED blink dengan interval waktu, LED running kiri ke kanan, LED r
 Bayangin kamu lagi masak mie terus disuruh nunggu 3 menit. Kalau pakai `delay()`, kamu cuma bengong di depan panci selama 3 menit, nggak boleh ngapa-ngapain. Begitu juga ESP32: pas `delay()` jalan, dia "diem" dan nggak bisa ngerjain hal lain. Di program ini LED nyala lalu mati dengan jeda 1 detik, terus 2 detik, terus 3 detik, dan diulang terus. Daftar jedanya disimpan di array `intervals[]`, jadi kodenya cukup ditulis sekali lalu diulang pakai `for`. Cocok buat program sederhana, tapi kurang oke kalau ESP32 harus ngerjain banyak hal sekaligus.
 **"**
 
-**🎥 Video:**
-
-<!-- Upload video 1a ke sini (drag & drop file .mp4 saat edit README di GitHub) -->
-VIDEO_1A
+[1A.webm](https://github.com/user-attachments/assets/45952bc2-b7ac-4e46-ad45-ee63147fc134)
 
 #### 🔹 Versi `millis()`
 
@@ -42,10 +39,7 @@ VIDEO_1A
 Nah, kalau `millis()` itu kayak masak mie sambil pasang timer di HP. Kamu tetap bebas main game, scroll, atau ngerjain tugas, dan cuma ngecek timer sesekali: "udah 3 menit belum?". `millis()` itu penghitung waktu ESP32 sejak dinyalakan (satuan milidetik). Programnya ngecek terus: kalau selisih waktu sekarang dan waktu terakhir LED berubah sudah sama dengan interval, LED di-*toggle* (nyala jadi mati, mati jadi nyala). Hasilnya sama persis dengan versi `delay()`, tapi ESP32 nggak "ketahan", jadi bisa sambil baca tombol atau sensor.
 **"**
 
-**🎥 Vide<!-- Upload video 1b ke sini -->
-VIDEO_1Bo:**
-
-
+[1B.webm](https://github.com/user-attachments/assets/56617b28-5917-4228-8855-352073c7c5b2)
 
 ---
 
@@ -59,10 +53,7 @@ VIDEO_1Bo:**
 Ini kayak lampu *running text* atau lampu sein mobil yang jalan. Pin ketiga LED dikumpulin di satu array `ledPins[]`, lalu `for` ngecek satu per satu dari LED paling kiri (indeks 0) sampai paling kanan (indeks 2). Tiap LED dinyalain sebentar, dimatiin, lalu giliran LED sebelahnya. Karena ada di dalam `loop()`, setelah LED kanan selesai, dia langsung balik lagi ke kiri, jadi muternya nggak berhenti. Pakai array + `for` bikin kode lebih pendek daripada nulis `digitalWrite` satu-satu.
 **"**
 
-**🎥 Video:**
-
-<!-- Upload video program 2 ke sini -->
-VIDEO_2
+[2.webm](https://github.com/user-attachments/assets/2404bc22-75a1-4565-8683-9a0cac710774)
 
 ---
 
@@ -76,10 +67,7 @@ VIDEO_2
 Konsepnya sama persis kayak Program 2, bedanya arah jalannya dibalik. Kalau tadi `for` ngitung maju dari 0 ke 2, sekarang `for`-nya ngitung mundur dari indeks terakhir (2) ke 0. Jadi yang nyala duluan LED paling kanan, lalu geser ke tengah, lalu ke kiri, dan diulang terus. Jadi cukup ubah arah hitungan di `for`, nggak perlu nulis ulang semuanya.
 **"**
 
-**🎥 Video:**
-
-<!-- Upload video program 3 ke sini -->
-VIDEO_3
+[3.webm](https://github.com/user-attachments/assets/9c790aea-3d51-4c61-8e0a-35ad33a380dd)
 
 ---
 
@@ -98,8 +86,5 @@ VIDEO_3
 **"**
 Di sini semua program sebelumnya digabung jadi satu, dan kamu yang pegang kendali lewat tombol. Caranya, ada variabel `mode` yang tugasnya "ngingetin" ESP32 lagi di mode apa: blink, running kiri-kanan, atau running kanan-kiri. Pas tombol ditekan, program cuma ngubah isi `mode`, nggak langsung nyalain LED. Setelah itu `switch-case` yang milih pola LED sesuai `mode`-nya. Tombolnya pakai `INPUT_PULLUP`, jadi kondisi normalnya HIGH dan berubah jadi LOW pas ditekan. Timing-nya pakai `millis()` (bukan `delay()`), makanya tombol tetap langsung responsif walau LED lagi jalan, dan kamu bisa ganti mode kapan aja.
 **"**
+[4.webm](https://github.com/user-attachments/assets/53e06e84-725b-47ef-b43c-1238ed0c1318)
 
-**🎥 Video:**
-
-<!-- Upload video program 4 ke sini -->
-VIDEO_4
