@@ -86,5 +86,6 @@ Konsepnya sama persis kayak Program 2, bedanya arah jalannya dibalik. Kalau tadi
 **"**
 Di sini semua program sebelumnya digabung jadi satu, dan kamu yang pegang kendali lewat tombol. Caranya, ada variabel `mode` yang tugasnya "ngingetin" ESP32 lagi di mode apa: blink, running kiri-kanan, atau running kanan-kiri. Pas tombol ditekan, program cuma ngubah isi `mode`, nggak langsung nyalain LED. Setelah itu `switch-case` yang milih pola LED sesuai `mode`-nya. Tombolnya pakai `INPUT_PULLUP`, jadi kondisi normalnya HIGH dan berubah jadi LOW pas ditekan. Timing-nya pakai `millis()` (bukan `delay()`), makanya tombol tetap langsung responsif walau LED lagi jalan, dan kamu bisa ganti mode kapan aja.
 **"**
+
 [4.webm](https://github.com/user-attachments/assets/53e06e84-725b-47ef-b43c-1238ed0c1318)
 
